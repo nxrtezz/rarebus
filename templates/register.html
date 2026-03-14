@@ -1,16 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
 <section class="card narrow">
-  <h1>Register</h1>
-  <p class="muted">Create an account to view fleets and alerts. Staff accounts can edit.</p>
-  <form method="post" action="/register/" class="stack">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <label><span>Username</span>{{ form.username }}</label>
-    <label><span>Email</span>{{ form.email }}</label>
-    <label><span>Password</span>{{ form.password1 }}</label>
-    <label><span>Confirm password</span>{{ form.password2 }}</label>
-    <button class="btn" type="submit">Create account</button>
-  </form>
+<h1>Register</h1>
+
+<form method="post">
+{% csrf_token %}
+{{ form.as_p }}
+<button class="btn" type="submit">Register</button>
+</form>
+
+<p class="muted">Your account will need admin approval.</p>
+
 </section>
 {% endblock %}

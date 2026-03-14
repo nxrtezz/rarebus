@@ -19,6 +19,9 @@
       </div>
       <div>{{ alert.message }}</div>
       <small class="muted">{{ alert.operator_name }} • {{ alert.created_at|date:'d/m/Y H:i' }}</small>
+      <a class="btn btn-danger" href="/alerts/clear/?operator={{ operator.id }}">
+      Clear alerts
+      </a>
     </article>
     {% empty %}
     <p class="muted">No alerts yet.</p>

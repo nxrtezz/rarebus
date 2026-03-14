@@ -25,4 +25,6 @@ urlpatterns = [
     path("alerts/", views.alerts_view, name="alerts"),
     path("alerts/delete/<int:alert_id>/", views.delete_alert, name="delete-alert"),
     path("stats/", views.stats_view, name="stats"),
+    path("register/", views.register_view, name="register"),
+    path("alerts/clear/", views.clear_alerts, name="clear-alerts"),
 ]

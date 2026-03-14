@@ -4,11 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponseForbidden, HttpResponseServerError
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 
 from .models import Operator, Vehicle, Route, TypeRule, VehicleRule, Alert, PollState, VehicleWatch
 from .forms import OperatorForm, VehicleOverrideForm, RegisterForm, VehicleWatchForm
 from .services import sync_operator_data, poll_all_operators, poll_operator, send_test_webhook
-
 
 def base_context(request):
     operators = list(Operator.objects.all())
@@ -323,3 +324,35 @@ def stats_view(request):
     uncommon = Alert.objects.filter(operator=operator, level="UNCOMMON").count() if operator else 0
     watches = VehicleWatch.objects.filter(operator=operator).count() if operator else 0
     return render(request, "stats.html", {**ctx, "title": "Statistics", "operator": operator, "total": total, "rare": rare, "uncommon": uncommon, "watches": watches})
+
+def register_view(request):
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_active = False  # admin must approve
+            user.save()
+            messages.success(request, "Account created. Await admin approval.")
+            return redirect("/login/")
+    else:
+        form = UserCreationForm()
+
+    return render(request, "register.html", {
+        "title": "Register",
+        "form": form
+    })
+
+@login_required
+def clear_alerts(request):
+    operator_id = request.GET.get("operator")
+
+    if operator_id:
+        Alert.objects.filter(operator_id=operator_id).delete()
+    else:
+        Alert.objects.all().delete()
+
+    state = PollState.get_solo()
+    state.latest_banner_message = ""
+    state.save()
+
+    return redirect("/alerts/")

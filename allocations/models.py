@@ -69,6 +69,8 @@ class Vehicle(models.Model):
     override_notes = models.TextField(blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    last_alert_date = models.DateField(null=True, blank=True)
+
     class Meta:
         ordering = ["fleet_number", "fleet_code"]
 
