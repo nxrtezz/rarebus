@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid two">
+  <section class="card">
+    <h1>Operators</h1>
+    <p class="muted">Each operator has its own Bustimes config, theme, webhook, training code, and dead code.</p>
+    {% if request.user.is_staff %}
+    <form method="post" action="/operators/" class="stack">
+      {% csrf_token %}
+      <input type="hidden" name="id" value="">
+      <label><span>Name</span><input class="input" name="name" required></label>
+      <label><span>Bustimes operator code</span><input class="input" name="code" placeholder="FHAM" required></label>
+      <div class="grid two">
+        <label><span>Theme colour</span><input class="input" type="color" name="theme_color" value="#00539f"></label>
+        <label><span>Accent colour</span><input class="input" type="color" name="accent_color" value="#f0ad4e"></label>
+      </div>
+      <label><span>Discord webhook URL</span><input class="input" name="discord_webhook_url" placeholder="https://discord.com/api/webhooks/..."></label>
+      <label><span>API base URL</span><input class="input" name="api_base_url" value="https://bustimes.org/api"></label>
+      <div class="grid three">
+        <label><span>Vehicles path</span><input class="input" name="vehicles_path" value="/vehicles/"></label>
+        <label><span>Services path</span><input class="input" name="services_path" value="/services/"></label>
+        <label><span>Vehicle journeys path</span><input class="input" name="vehicle_journeys_path" value="/vehiclejourneys/"></label>
+      </div>
+      <label><span>Operator param name</span><input class="input" name="operator_param_name" value="operator"></label>
+      <div class="grid two">
+        <label><span>Training code</span><input class="input" name="training_code" placeholder="TRNG"></label>
+        <label><span>Dead code</span><input class="input" name="dead_code" placeholder="DEAD"></label>
+      </div>
+      <button class="btn" type="submit">Save operator</button>
+    </form>
+    {% else %}
+    <p class="muted">You can view operators but only staff can edit them.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Saved operators</h2>
+    <div class="list">
+      {% for op in operators %}
+      <article class="list-item">
+        <div class="list-row">
+          <strong>{{ op.name }}</strong>
+          <span class="pill pill-neutral">{{ op.code }}</span>
+        </div>
+        <div class="muted">Theme <code>{{ op.theme_color }}</code> • Alert accent <code>{{ op.accent_color }}</code></div>
+        <div class="muted">Training <code>{{ op.training_code|default:'-' }}</code> • Dead <code>{{ op.dead_code|default:'-' }}</code></div>
+        <div class="muted">Public URL <code>/fleet/{{ op.code }}/</code></div>
+        <div class="action-row">
+          <a class="btn btn-secondary" href="/?operator={{ op.id }}">Open</a>
+          <a class="btn btn-ghost" href="/fleet/{{ op.code }}/" target="_blank" rel="noreferrer">Public</a>
+          {% if request.user.is_staff %}
+          <a class="btn btn-ghost" href="/sync/?operator={{ op.id }}">Sync now</a>
+          <form method="post" action="/operators/{{ op.id }}/test-webhook/">{% csrf_token %}<button class="btn btn-secondary" type="submit">Test webhook</button></form>
+          <form method="post" action="/operators/{{ op.id }}/delete/" onsubmit="return confirm('Delete this operator and its data?')">{% csrf_token %}<button class="btn btn-danger" type="submit">Delete</button></form>
+          {% endif %}
+        </div>
+      </article>
+      {% empty %}
+      <p class="muted">No operators saved.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

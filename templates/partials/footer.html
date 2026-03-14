@@ -1,0 +1,12 @@
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div>© 2026 Noel • Bus Allocations v{{ app_version }}</div>
+    <div class="footer-links">
+      <a href="{{ github_url }}" target="_blank" rel="noreferrer">GitHub</a>
+      {% if active_operator %}
+      <a href="/fleet/{{ active_operator.code }}/" target="_blank" rel="noreferrer">Public fleet URL</a>
+      {% endif %}
+      <span>Powered by Django</span>
+    </div>
+  </div>
+</footer>

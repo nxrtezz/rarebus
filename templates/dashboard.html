@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<section class="hero">
+  <div>
+    <h1>
+    {% if operator %}
+        {% if operator.code == "FHAM" %}
+            <img src="{% static 'logos/FHAM.png' %}" style="height:100px;">
+        {% else %}
+            {{ operator.name }}
+        {% endif %}
+    {% else %}
+    No operator selected
+    {% endif %}
+    </h1>
+    <p class="muted">Fleet is sorted by fleet number. Withdrawn vehicles are hidden from all active pages.</p>
+    {% if operator %}
+    <p class="muted">Public fleet URL: <a href="/fleet/{{ operator.code }}/" target="_blank" rel="noreferrer">/fleet/{{ operator.code }}/</a></p>
+    {% endif %}
+  </div>
+  {% if operator and request.user.is_staff %}
+  <div class="hero-actions">
+    <a class="btn" href="/sync/?operator={{ operator.id }}">Sync Bustimes</a>
+    <form action="/poll/" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="operator_id" value="{{ operator.id }}">
+      <button class="btn btn-secondary" type="submit">Run poll now</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+
+{% if not operator %}
+<section class="card">
+  <h2>Add your first operator</h2>
+  <p class="muted">Go to the operators page and add the Bustimes code, theme colour, webhook, training code, and dead code.</p>
+</section>
+{% else %}
+<section class="stats">
+  <div class="stat card"><div class="stat-label">Active fleet</div><div class="stat-value">{{ fleet|length }}</div></div>
+  <div class="stat card"><div class="stat-label">Last poll</div><div class="stat-value small">{% if poll_state.last_poll_at %}{{ poll_state.last_poll_at|date:'d/m/Y H:i' }}{% else %}Not yet{% endif %}</div></div>
+  <div class="stat card"><div class="stat-label">Webhook</div><div class="stat-value small">{% if operator.discord_webhook_url %}Configured{% else %}Not set{% endif %}</div></div>
+  <div class="stat card"><div class="stat-label">Training code</div><div class="stat-value small">{% if operator.training_code %}{{ operator.training_code }}{% else %}-{% endif %}</div></div>
+</section>
+
+<section class="grid two">
+  <section class="card">
+    <div class="section-head">
+      <h2>Fleet</h2>
+      <a class="btn btn-ghost" href="/fleet/withdrawn/?operator={{ operator.id }}">Withdrawn page</a>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fleet</th>
+            <th>Reg</th>
+            <th>Type</th>
+            <th>Livery</th>
+            <th>Route</th>
+            <th>Rarity</th>
+            <th>Last seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for vehicle in fleet %}
+          <tr>
+            <td><a href="/fleet/{{ vehicle.id }}/?operator={{ operator.id }}">{{ vehicle.fleet_code }}</a></td>
+            <td>{% if vehicle.reg %}{{ vehicle.reg }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.vehicle_type %}{{ vehicle.vehicle_type }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.livery_css %}<div class="livery-pill {{ vehicle.livery_css }}"></div>{% else %}-{% endif %}</td>
+            <td>{% if vehicle.current_route %}{{ vehicle.current_route }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.current_allocation_level %}<span class="pill pill-{{ vehicle.current_allocation_level|lower }}">{{ vehicle.current_allocation_level }}</span>{% else %}-{% endif %}</td>
+            <td>{% if vehicle.last_seen_journey_at %}{{ vehicle.last_seen_journey_at|date:'H:i' }}{% else %}-{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="muted">No vehicles yet. Sync Bustimes first.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>Latest alerts</h2>
+      <a class="btn btn-ghost" href="/alerts/?operator={{ operator.id }}">View all</a>
+    </div>
+    <div class="list">
+      {% for alert in alerts %}
+      <article class="list-item">
+        <div class="list-row">
+          <strong>{{ alert.fleet_code }}</strong>
+          <span class="pill pill-{{ alert.level|lower }}">{{ alert.level }}</span>
+        </div>
+        <div>{{ alert.message }}</div>
+        <small class="muted">{{ alert.created_at|date:'d/m/Y H:i' }}</small>
+      </article>
+      {% empty %}
+      <p class="muted">No alerts yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endif %}
+{% endblock %}

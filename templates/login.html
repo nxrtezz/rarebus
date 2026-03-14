@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card narrow">
+  <h1>Login</h1>
+  <p class="muted">Use your account to view fleets and alerts.</p>
+  {% if error %}<div class="notice notice-danger">{{ error }}</div>{% endif %}
+  <form method="post" action="/login/" class="stack">
+    {% csrf_token %}
+    <label><span>Username</span><input class="input" type="text" name="username" required></label>
+    <label><span>Password</span><input class="input" type="password" name="password" required></label>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</section>
+{% endblock %}

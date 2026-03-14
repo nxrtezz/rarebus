@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<section class="hero">
+  <div>
+    <h1>
+    {% if operator %}
+        {% if operator.code == "FHAM" %}
+            <img src="{% static 'logos/FHAM.png' %}" style="height:100px;">
+        {% else %}
+            {{ operator.name }}
+        {% endif %}
+    {% else %}
+    No operator selected
+    {% endif %}
+    </h1>
+    <p class="muted">Fleet is sorted by fleet number. Withdrawn vehicles are hidden from all active pages.</p>
+    <h3>This is the First Portsmouth, Fareham & Gosport fleet</h1>
+    <p class="">This page is public, but does not represent the official fleet infomation for First Bus. All data represented here is from enthusiasts and should not be taken into consideration for official purposes. <break></break>If you have any corrections or updates to the fleet, please refer elsewhere for the time being.</p>
+  </div>
+</section>
+
+{% if operator %}
+<section class="grid two">
+  <section class="card">
+    <div class="section-head"><h2>Fleet</h2></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Fleet</th><th>Reg</th><th>Type</th><th>Livery</th><th>Route</th><th>Rarity</th><th>Last seen</th></tr>
+        </thead>
+        <tbody>
+          {% for vehicle in fleet %}
+          <tr>
+            <td>{{ vehicle.fleet_code }}</td>
+            <td>{% if vehicle.reg %}{{ vehicle.reg }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.vehicle_type %}{{ vehicle.vehicle_type }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.livery_css %}<div class="livery-pill {{ vehicle.livery_css }}"></div>{% else %}-{% endif %}</td>
+            <td>{% if vehicle.current_route %}{{ vehicle.current_route }}{% else %}-{% endif %}</td>
+            <td>{% if vehicle.current_allocation_level %}<span class="pill pill-{{ vehicle.current_allocation_level|lower }}">{{ vehicle.current_allocation_level }}</span>{% else %}-{% endif %}</td>
+            <td>{% if vehicle.last_seen_journey_at %}{{ vehicle.last_seen_journey_at|date:'H:i' }}{% else %}-{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="muted">No vehicles yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card">
+    <div class="section-head"><h2>Latest alerts</h2></div>
+    <h3 class="muted">Please excuse any inaccuracies, this is still in development.</h3>
+    <div class="list">
+      {% for alert in alerts %}
+      <article class="list-item">
+        <div class="list-row">
+          <strong>{{ alert.fleet_code }}</strong>
+          <span class="pill pill-{{ alert.level|lower }}">{{ alert.level }}</span>
+        </div>
+        <div>{{ alert.message }}</div>
+        <small class="muted">{{ alert.created_at|date:'d/m/Y H:i' }}</small>
+      </article>
+      {% empty %}
+      <p class="muted">No alerts yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% else %}
+<section class="card"><p class="muted">No operator matches that code.</p></section>
+{% endif %}
+{% endblock %}

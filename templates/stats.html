@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <h1>Statistics</h1>
+  {% if operator %}
+  <div class="stats">
+    <div class="stat card"><div class="stat-label">Fleet size</div><div class="stat-value">{{ total }}</div></div>
+    <div class="stat card"><div class="stat-label">Rare alerts</div><div class="stat-value">{{ rare }}</div></div>
+    <div class="stat card"><div class="stat-label">Uncommon alerts</div><div class="stat-value">{{ uncommon }}</div></div>
+    <div class="stat card"><div class="stat-label">Active watches</div><div class="stat-value">{{ watches }}</div></div>
+  </div>
+  {% else %}
+  <p class="muted">Pick an operator first.</p>
+  {% endif %}
+</section>
+{% endblock %}

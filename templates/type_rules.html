@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <div class="section-head">
+    <div>
+      <h1>Mass define type rules</h1>
+      <p class="muted">Set route rarity by vehicle type first. Specific vehicle rules can override later.</p>
+    </div>
+  </div>
+
+  {% if not operator %}
+  <p class="muted">Pick an operator first.</p>
+  {% else %}
+  <form class="inline-form" method="get" action="/rules/types/">
+    <input type="hidden" name="operator" value="{{ operator.id }}">
+    <select class="input" name="vehicleType" onchange="this.form.submit()">
+      {% for type in vehicle_types %}
+      <option value="{{ type }}" {% if selected_type == type %}selected{% endif %}>{{ type }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if not selected_type %}
+  <p class="muted">Sync the fleet first to load vehicle types.</p>
+  {% else %}
+  <form method="post" action="/rules/types/save/" class="stack">
+    {% csrf_token %}
+    <input type="hidden" name="operator_id" value="{{ operator.id }}">
+    <input type="hidden" name="vehicle_type" value="{{ selected_type }}">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Route</th><th>Description</th><th>Level</th></tr></thead>
+        <tbody>
+          {% for route in routes %}
+          <tr>
+            <td>{{ route.line_name }}</td>
+            <td>{% if route.description %}{{ route.description }}{% else %}-{% endif %}</td>
+            <td>
+              {% if request.user.is_staff %}
+              <input type="hidden" name="levels_route_id" value="{{ route.id }}">
+              <select class="input" name="levels_level">
+                <option value="COMMON" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'COMMON' %}selected{% endif %}{% endfor %}>Common</option>
+                <option value="UNCOMMON" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'UNCOMMON' %}selected{% endif %}{% endfor %}>Uncommon</option>
+                <option value="RARE" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'RARE' %}selected{% endif %}{% empty %}selected{% endfor %}>Rare</option>
+              </select>
+              {% else %}
+              {% with shown='RARE' %}
+                {% for rule in rules %}{% if rule.route_id == route.id %}<span class="pill pill-{{ rule.level|lower }}">{{ rule.level }}</span>{% endif %}{% endfor %}
+              {% endwith %}
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="muted">No routes yet. Sync Bustimes first.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if request.user.is_staff %}<button class="btn" type="submit">Save type rules</button>{% endif %}
+  </form>
+  {% endif %}
+  {% endif %}
+</section>
+{% endblock %}

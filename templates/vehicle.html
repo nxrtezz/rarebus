@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid two">
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <h1>Vehicle {{ vehicle.fleet_code }}</h1>
+        <p class="muted">{% if vehicle.reg %}{{ vehicle.reg }}{% else %}No reg{% endif %} • {% if vehicle.vehicle_type %}{{ vehicle.vehicle_type }}{% else %}Unknown type{% endif %}</p>
+      </div>
+      <span class="pill pill-neutral">{{ vehicle.manual_state }}</span>
+    </div>
+
+    <div class="key-grid">
+      <div><strong>Current route</strong><div>{% if vehicle.current_route %}{{ vehicle.current_route }}{% else %}-{% endif %}</div></div>
+      <div><strong>Destination</strong><div>{% if vehicle.current_destination %}{{ vehicle.current_destination }}{% else %}-{% endif %}</div></div>
+      <div><strong>Last seen</strong><div>{% if vehicle.last_seen_journey_at %}{{ vehicle.last_seen_journey_at|date:'d/m/Y H:i' }}{% else %}-{% endif %}</div></div>
+      <div><strong>Current level</strong><div>{% if vehicle.current_allocation_level %}{{ vehicle.current_allocation_level }}{% else %}-{% endif %}</div></div>
+    </div>
+
+    {% if request.user.is_staff %}
+    <form method="post" action="/fleet/{{ vehicle.id }}/state/" class="stack">
+      {% csrf_token %}
+      <input type="hidden" name="operator_id" value="{{ operator.id }}">
+      <label><span>Manual state</span>
+        <select class="input" name="manual_state">
+          <option value="ACTIVE" {% if vehicle.manual_state == 'ACTIVE' %}selected{% endif %}>Active</option>
+          <option value="VOR" {% if vehicle.manual_state == 'VOR' %}selected{% endif %}>VOR</option>
+        </select>
+      </label>
+      <button class="btn btn-secondary" type="submit">Save state</button>
+    </form>
+
+    <form method="post" action="/fleet/{{ vehicle.id }}/override/" class="stack">
+      {% csrf_token %}
+      <input type="hidden" name="operator_id" value="{{ operator.id }}">
+      <label><span>Vehicle type</span><input class="input" name="vehicle_type" value="{{ vehicle.vehicle_type|default:'' }}"></label>
+      <label><span>Override display name</span><input class="input" name="override_name" value="{{ vehicle.override_name|default:'' }}"></label>
+      <label><span>Notes</span><textarea class="input" name="override_notes" rows="4">{{ vehicle.override_notes|default:'' }}</textarea></label>
+      <label><span>Trainer vehicle</span><input type="checkbox" name="trainer" value="1" {% if vehicle.trainer %}checked{% endif %}></label>
+      <button class="btn" type="submit">Save vehicle details</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <h2>Specific vehicle rules</h2>
+        <p class="muted">These override the type rules for this single vehicle.</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Route</th><th>Type rule</th><th>Vehicle override</th></tr></thead>
+        <tbody>
+          {% for route in routes %}
+          <tr>
+            <td>{{ route.line_name }}</td>
+            <td>
+              {% for rule in type_rules %}
+                {% if rule.route_id == route.id %}<span class="pill pill-{{ rule.level|lower }}">{{ rule.level }}</span>{% endif %}
+              {% empty %}
+                <span class="pill pill-rare">RARE</span>
+              {% endfor %}
+              {% if not type_rules %}<span class="pill pill-rare">RARE</span>{% endif %}
+            </td>
+            <td>
+              {% if request.user.is_staff %}
+              <form method="post" action="/rules/vehicle/save/" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="operator_id" value="{{ operator.id }}">
+                <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+                <input type="hidden" name="route_id" value="{{ route.id }}">
+                <select class="input" name="level">
+                  <option value="COMMON">Common</option>
+                  <option value="UNCOMMON">Uncommon</option>
+                  <option value="RARE" selected>Rare</option>
+                </select>
+                <button class="btn btn-secondary" type="submit">Save</button>
+              </form>
+              {% else %}
+              <span class="muted">Staff only</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="muted">No routes loaded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <h2>Vehicle watches</h2>
+      <p class="muted">Create an alert when this vehicle tracks, or when it tracks on a specific route.</p>
+    </div>
+  </div>
+
+  <form method="post" action="/fleet/{{ vehicle.id }}/watch/create/" class="inline-form">
+    {% csrf_token %}
+    <input class="input" name="route_name" placeholder="Leave blank for any route, or enter a route like 3 or SD7">
+    <button class="btn" type="submit">Add watch</button>
+  </form>
+
+  <div class="list" style="margin-top: 12px;">
+    {% for watch in watches %}
+    <article class="list-item">
+      <div class="list-row">
+        <strong>{% if watch.route_name %}Watching route {{ watch.route_name }}{% else %}Watching any route{% endif %}</strong>
+        <form method="post" action="/fleet/{{ vehicle.id }}/watch/{{ watch.id }}/delete/">
+          {% csrf_token %}
+          <button class="alert-delete" type="submit">×</button>
+        </form>
+      </div>
+      <small class="muted">Created {{ watch.created_at|date:'d/m/Y H:i' }}</small>
+    </article>
+    {% empty %}
+    <p class="muted">No watches set for your account.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
