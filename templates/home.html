@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<section class="card welcome">
+  {% now "H" as current_hour %}
+  {% if current_hour|add:"0" >= 4 and current_hour|add:"0" < 12 %}
+    <h2>Good morning, {{ request.user.first_name }}!</h2>
+  {% elif current_hour|add:"0" >= 12 and current_hour|add:"0" < 19 %}
+    <h2>Good afternoon, {{ request.user.first_name }}!</h2>
+  {% else %}
+    <h2>Good evening, {{ request.user.first_name }}</h2>
+  {% endif %}
+  <p class="muted">System overview and recent activity.</p>
+</section>
+
+
+<!-- System stats -->
+<section class="stats">
+
+  <div class="stat card">
+    <div class="stat-label">Operators tracked</div>
+    <div class="stat-value">{{ operators|length }}</div>
+  </div>
+
+  <div class="stat card">
+    <div class="stat-label">Fleet monitored</div>
+    <div class="stat-value">{{ fleet_total }}</div>
+  </div>
+
+  <div class="stat card">
+    <div class="stat-label">Alerts today</div>
+    <div class="stat-value">{{ alerts_today }}</div>
+  </div>
+
+  <div class="stat card">
+    <div class="stat-label">Last poll</div>
+    <div class="stat-value small">
+      {% if poll_state.last_poll_at %}
+        {{ poll_state.last_poll_at|date:'d/m/Y H:i' }}
+      {% else %}
+        Not yet
+      {% endif %}
+    </div>
+  </div>
+
+</section>
+
+
+<section class="grid three">
+
+
+  <!-- Recently viewed operators -->
+  <section class="card">
+
+    <div class="section-head">
+      <h2>Recently viewed</h2>
+    </div>
+
+    <ul class="recent-operators">
+
+      {% for op in recent_operators %}
+      <li>
+        <a href="/dashboard/?operator={{ op.id }}">
+          {{ op.name }}
+        </a>
+      </li>
+      {% empty %}
+      <li class="muted">No recent operators</li>
+      {% endfor %}
+
+    </ul>
+
+  </section>
+
+
+
+  <!-- Operator list -->
+  <section class="card">
+
+    <div class="section-head">
+      <h2>Operators</h2>
+    </div>
+
+    <ul class="operator-list">
+
+      {% for op in operators %}
+      <li>
+        <a href="/dashboard/?operator={{ op.id }}">
+          {{ op.name }}
+        </a>
+      </li>
+      {% empty %}
+      <li class="muted">No operators configured</li>
+      {% endfor %}
+
+    </ul>
+
+  </section>
+
+
+
+  <!-- Global alerts -->
+  <section class="card">
+
+    <div class="section-head">
+      <h2>Latest alerts</h2>
+      <a class="btn btn-ghost" href="/alerts/">View all</a>
+    </div>
+
+    <div class="list">
+
+      {% for alert in alerts %}
+
+      <article class="list-item">
+
+        <div class="list-row">
+
+          <strong>{{ alert.fleet_code }}</strong>
+
+          <span class="pill pill-{{ alert.level|lower }}">
+            {{ alert.level }}
+          </span>
+
+        </div>
+
+        <div>
+          {{ alert.message }}
+        </div>
+
+        <small class="muted">
+          {{ alert.operator_name }} • {{ alert.created_at|date:'H:i' }}
+        </small>
+
+      </article>
+
+      {% empty %}
+
+      <p class="muted">No alerts yet.</p>
+
+      {% endfor %}
+
+    </div>
+
+  </section>
+
+
+</section>
+
+{% endblock %}

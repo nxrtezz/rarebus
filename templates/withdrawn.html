@@ -19,7 +19,7 @@
           <td>{% if vehicle.vehicle_type %}{{ vehicle.vehicle_type }}{% else %}-{% endif %}</td>
           <td>
             {% if request.user.is_staff %}
-            <form method="post" action="/fleet/{{ vehicle.id }}/restore/">
+            <form method="post" action="/dashboard/fleet/{{ vehicle.id }}/restore/">
               {% csrf_token %}
               <input type="hidden" name="operator_id" value="{{ operator.id|default:'' }}">
               <button class="btn btn-secondary" type="submit">Restore to fleet</button>

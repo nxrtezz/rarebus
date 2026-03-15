@@ -1,16 +1,163 @@
 {% extends 'base.html' %}
 {% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <section class="card">
-  <h1>Statistics</h1>
-  {% if operator %}
-  <div class="stats">
-    <div class="stat card"><div class="stat-label">Fleet size</div><div class="stat-value">{{ total }}</div></div>
-    <div class="stat card"><div class="stat-label">Rare alerts</div><div class="stat-value">{{ rare }}</div></div>
-    <div class="stat card"><div class="stat-label">Uncommon alerts</div><div class="stat-value">{{ uncommon }}</div></div>
-    <div class="stat card"><div class="stat-label">Active watches</div><div class="stat-value">{{ watches }}</div></div>
+  <div class="section-head">
+    <h1>Statistics</h1>
   </div>
-  {% else %}
+
+  {% if not operator %}
   <p class="muted">Pick an operator first.</p>
+  {% else %}
+
+  <!-- STAT CARDS -->
+
+  <div class="stats">
+
+    <div class="stat card">
+      <div class="stat-label">Fleet size</div>
+      <div class="stat-value">{{ total }}</div>
+    </div>
+
+    <div class="stat card">
+      <div class="stat-label">Rare alerts</div>
+      <div class="stat-value">{{ rare }}</div>
+    </div>
+
+    <div class="stat card">
+      <div class="stat-label">Uncommon alerts</div>
+      <div class="stat-value">{{ uncommon }}</div>
+    </div>
+
+    <div class="stat card">
+      <div class="stat-label">Active watches</div>
+      <div class="stat-value">{{ watches }}</div>
+    </div>
+
+  </div>
+
+  </section>
+
+  <br></br>
+  
+  <section class="grid two">
+
+  <!-- RARITY CHART -->
+
+  <section class="card">
+    <h2>Alert rarity distribution</h2>
+    <canvas id="rarityChart"></canvas>
+  </section>
+
+  <!-- ROUTE CHART -->
+
+  <section class="card">
+    <h2>Top routes by alerts</h2>
+    <canvas id="routesChart"></canvas>
+  </section>
+
+  </section>
+
+  <section class="grid two">
+
+  <!-- VEHICLE TYPES -->
+
+  <section class="card">
+    <h2>Fleet type distribution</h2>
+    <canvas id="typeChart"></canvas>
+  </section>
+
+  <!-- ALERT TREND -->
+
+  <section class="card">
+    <h2>Alerts last 7 days</h2>
+    <canvas id="trendChart"></canvas>
+  </section>
+
+  </section>
+
   {% endif %}
 </section>
+
+<script>
+
+const rarityLabels = [{% for i in level_stats %}"{{ i.level }}",{% endfor %}]
+const rarityData = [{% for i in level_stats %}{{ i.count }},{% endfor %}]
+
+new Chart(document.getElementById("rarityChart"), {
+  type: "pie",
+  data: {
+    labels: rarityLabels,
+    datasets: [{
+      data: rarityData,
+      backgroundColor: [
+        "#2DCE89",
+        "#F0AD4E",
+        "#E55353"
+      ]
+    }]
+  }
+})
+
+
+const routeLabels = [{% for r in route_stats %}"{{ r.route_name }}",{% endfor %}]
+const routeData = [{% for r in route_stats %}{{ r.count }},{% endfor %}]
+
+new Chart(document.getElementById("routesChart"), {
+  type: "bar",
+  data: {
+    labels: routeLabels,
+    datasets: [{
+      label: "Alerts",
+      data: routeData,
+      backgroundColor: "#00539f"
+    }]
+  },
+  options: {
+    plugins: {legend: {display:false}}
+  }
+})
+
+
+const typeLabels = [{% for t in type_stats %}"{{ t.vehicle_type|default:"Unknown" }}",{% endfor %}]
+const typeData = [{% for t in type_stats %}{{ t.count }},{% endfor %}]
+
+new Chart(document.getElementById("typeChart"), {
+  type: "doughnut",
+  data: {
+    labels: typeLabels,
+    datasets: [{
+      data: typeData,
+      backgroundColor: [
+        "#00539f",
+        "#f0ad4e",
+        "#2DCE89",
+        "#E55353",
+        "#8898aa"
+      ]
+    }]
+  }
+})
+
+
+const trendLabels = [{% for a in alert_trend %}"{{ a.day }}",{% endfor %}]
+const trendData = [{% for a in alert_trend %}{{ a.count }},{% endfor %}]
+
+new Chart(document.getElementById("trendChart"), {
+  type: "line",
+  data: {
+    labels: trendLabels,
+    datasets: [{
+      label: "Alerts",
+      data: trendData,
+      borderColor: "#00539f",
+      tension: 0.3
+    }]
+  }
+})
+
+</script>
+
 {% endblock %}

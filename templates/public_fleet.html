@@ -3,20 +3,23 @@
 {% load static %}
 <section class="hero">
   <div>
-    <h1>
+    <h1 style="text-align:center;">
     {% if operator %}
-        {% if operator.code == "FHAM" %}
-            <img src="{% static 'logos/FHAM.png' %}" style="height:100px;">
-        {% else %}
-            {{ operator.name }}
-        {% endif %}
+
+      <img
+        src="{% static 'logos/'|add:operator.code|add:'.png' %}"
+        style="height:100px;"
+        alt="{{ operator.name }}"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+      >
+
+      <span style="display:none;">{{ operator.name }}</span>
+
     {% else %}
-    No operator selected
+      No operator selected
     {% endif %}
     </h1>
-    <p class="muted">Fleet is sorted by fleet number. Withdrawn vehicles are hidden from all active pages.</p>
-    <h3>This is the First Portsmouth, Fareham & Gosport fleet</h1>
-    <p class="">This page is public, but does not represent the official fleet infomation for First Bus. All data represented here is from enthusiasts and should not be taken into consideration for official purposes. <break></break>If you have any corrections or updates to the fleet, please refer elsewhere for the time being.</p>
+    <p class="">This page is public, but does not represent the official fleet infomation for any operators. All data represented here is from enthusiasts and should not be taken into consideration for official purposes. <break></break>If you have any corrections or updates to the fleet, please refer elsewhere for the time being.</p>
   </div>
 </section>
 

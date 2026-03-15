@@ -11,7 +11,7 @@
   {% if not operator %}
   <p class="muted">Pick an operator first.</p>
   {% else %}
-  <form class="inline-form" method="get" action="/rules/types/">
+  <form class="inline-form" method="get" action="/dashboard/rules/types/">
     <input type="hidden" name="operator" value="{{ operator.id }}">
     <select class="input" name="vehicleType" onchange="this.form.submit()">
       {% for type in vehicle_types %}
@@ -23,10 +23,25 @@
   {% if not selected_type %}
   <p class="muted">Sync the fleet first to load vehicle types.</p>
   {% else %}
-  <form method="post" action="/rules/types/save/" class="stack">
+  <form method="post" action="/dashboard/rules/types/save/" class="stack">
     {% csrf_token %}
     <input type="hidden" name="operator_id" value="{{ operator.id }}">
     <input type="hidden" name="vehicle_type" value="{{ selected_type }}">
+    {% if request.user.is_staff %}
+    <div class="bulk-controls">
+      <button type="button" class="btn btn-secondary" onclick="setAllLevels('COMMON')">
+        Set all Common
+      </button>
+
+      <button type="button" class="btn btn-secondary" onclick="setAllLevels('UNCOMMON')">
+        Set all Uncommon
+      </button>
+
+      <button type="button" class="btn btn-secondary" onclick="setAllLevels('RARE')">
+        Set all Rare
+      </button>
+    </div>
+    {% endif %}
     <div class="table-wrap">
       <table class="table">
         <thead><tr><th>Route</th><th>Description</th><th>Level</th></tr></thead>
@@ -36,18 +51,53 @@
             <td>{{ route.line_name }}</td>
             <td>{% if route.description %}{{ route.description }}{% else %}-{% endif %}</td>
             <td>
+
               {% if request.user.is_staff %}
+
               <input type="hidden" name="levels_route_id" value="{{ route.id }}">
+
               <select class="input" name="levels_level">
-                <option value="COMMON" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'COMMON' %}selected{% endif %}{% endfor %}>Common</option>
-                <option value="UNCOMMON" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'UNCOMMON' %}selected{% endif %}{% endfor %}>Uncommon</option>
-                <option value="RARE" {% for rule in rules %}{% if rule.route_id == route.id and rule.level == 'RARE' %}selected{% endif %}{% empty %}selected{% endfor %}>Rare</option>
+
+                <option value="COMMON"
+                  {% for rule in rules %}
+                    {% if rule.route_id == route.id and rule.level == "COMMON" %}selected{% endif %}
+                  {% empty %}
+                    selected
+                  {% endfor %}
+                >Common</option>
+
+                <option value="UNCOMMON"
+                  {% for rule in rules %}
+                    {% if rule.route_id == route.id and rule.level == "UNCOMMON" %}selected{% endif %}
+                  {% endfor %}
+                >Uncommon</option>
+
+                <option value="RARE"
+                  {% for rule in rules %}
+                    {% if rule.route_id == route.id and rule.level == "RARE" %}selected{% endif %}
+                  {% endfor %}
+                >Rare</option>
+
               </select>
-              {% else %}
-              {% with shown='RARE' %}
-                {% for rule in rules %}{% if rule.route_id == route.id %}<span class="pill pill-{{ rule.level|lower }}">{{ rule.level }}</span>{% endif %}{% endfor %}
-              {% endwith %}
+
+            {% else %}
+
+            {% with found=False %}
+              {% for rule in rules %}
+                {% if rule.route_id == route.id %}
+                  <span class="pill pill-{{ rule.level|lower }}">{{ rule.level }}</span>
+                  {% with found=True %}{% endwith %}
+                {% endif %}
+              {% endfor %}
+
+              {% if not found %}
+                <span class="pill pill-common">COMMON</span>
               {% endif %}
+            {% endwith %}
+
+            {% endif %}
+
+
             </td>
           </tr>
           {% empty %}
@@ -61,4 +111,16 @@
   {% endif %}
   {% endif %}
 </section>
+
+
+<script>
+function setAllLevels(level) {
+  const selects = document.querySelectorAll('select[name="levels_level"]');
+
+  selects.forEach(select => {
+    select.value = level;
+  });
+}
+</script>
+
 {% endblock %}

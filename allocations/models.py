@@ -15,12 +15,27 @@ class Operator(models.Model):
     operator_param_name = models.CharField(max_length=50, default="operator")
     training_code = models.CharField(max_length=50, blank=True)
     dead_code = models.CharField(max_length=50, blank=True)
+    rail_replacement_code = models.CharField(max_length=50, blank=True)
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+class OperatorCustomCode(models.Model):
+
+    operator = models.ForeignKey(Operator, on_delete=models.CASCADE)
+
+    code = models.CharField(max_length=50)
+
+    display_name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ("operator", "code")
+
+    def __str__(self):
+        return f"{self.operator.code} {self.code}"
 
 
 class Route(models.Model):
@@ -73,6 +88,12 @@ class Vehicle(models.Model):
 
     class Meta:
         ordering = ["fleet_number", "fleet_code"]
+        indexes = [
+            models.Index(fields=["operator"]),
+            models.Index(fields=["bustimes_vehicle_id"]),
+            models.Index(fields=["current_route"]),
+        ]
+
 
     def __str__(self):
         return self.fleet_code or str(self.pk)
@@ -82,7 +103,8 @@ class TypeRule(models.Model):
     COMMON = "COMMON"
     UNCOMMON = "UNCOMMON"
     RARE = "RARE"
-    LEVEL_CHOICES = [(COMMON, "Common"), (UNCOMMON, "Uncommon"), (RARE, "Rare")]
+    RAIL_REPLACEMENT = "RAIL_REPLACEMENT"
+    LEVEL_CHOICES = [(COMMON, "Common"), (UNCOMMON, "Uncommon"), (RARE, "Rare"), (RAIL_REPLACEMENT, "Rail Replacement")]
 
     operator = models.ForeignKey(Operator, on_delete=models.CASCADE)
     vehicle_type = models.CharField(max_length=200)
@@ -145,3 +167,76 @@ class VehicleWatch(models.Model):
 
     def __str__(self):
         return f"{self.created_by.username}: {self.vehicle.fleet_code} {self.route_name or 'ANY'}"
+
+class Supervisor(models.Model):
+    operator = models.ForeignKey(Operator, on_delete=models.CASCADE)
+    discord_username = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ["discord_username"]
+
+    def __str__(self):
+        return f"{self.discord_username} ({self.operator.name})"
+
+import random
+import string
+
+
+def generate_invite_code():
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+
+class InviteCode(models.Model):
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        default=generate_invite_code,
+        editable=False
+    )
+
+    active = models.BooleanField(default=True)
+
+    infinite_uses = models.BooleanField(default=False)
+
+    uses_remaining = models.IntegerField(default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.code
+
+from django.contrib.auth.models import User
+
+class OperatorFollow(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    guild_id = models.BigIntegerField(
+        null=True,
+        blank=True
+    )
+
+    channel_id = models.BigIntegerField(
+        null=True,
+        blank=True
+    )
+
+    operator = models.ForeignKey(
+        Operator,
+        on_delete=models.CASCADE
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (
+            "user",
+            "guild_id",
+            "operator"
+        )

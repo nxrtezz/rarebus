@@ -1,15 +1,63 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="card narrow">
-<h1>Register</h1>
 
-<form method="post">
+<section class="card narrow">
+
+<h1>Create an account</h1>
+<p class="muted">
+Register to track fleets, set vehicle watches and receive alerts.
+</p>
+
+<form method="post" class="stack">
 {% csrf_token %}
-{{ form.as_p }}
-<button class="btn" type="submit">Register</button>
+
+<label>
+<span>Email address</span>
+<input class="input" type="email" name="email" required>
+</label>
+
+<label>
+<span>Username</span>
+<input class="input" type="text" name="username" required>
+</label>
+
+<div class="grid two">
+
+<label>
+<span>First name</span>
+<input class="input" type="text" name="first_name" required>
+</label>
+
+<label>
+<span>Last name</span>
+<input class="input" type="text" name="last_name" required>
+</label>
+
+</div>
+
+<label>
+<span>Password</span>
+<input class="input" type="password" name="password1" required>
+</label>
+
+<label>
+<span>Confirm password</span>
+<input class="input" type="password" name="password2" required>
+</label>
+
+<label>
+<span>Invite code (optional)</span>
+<input class="input" type="text" name="invite_code" placeholder="Enter invite code if you have one">
+</label>
+
+<button class="btn" type="submit">Create account</button>
+
 </form>
 
-<p class="muted">Your account will need admin approval.</p>
+<p class="muted">
+Accounts created without a valid invite code will require administrator approval.
+</p>
 
 </section>
+
 {% endblock %}

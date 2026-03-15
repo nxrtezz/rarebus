@@ -1,14 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
 <section class="card">
-  <h1>Alert history</h1>
+
+  <div class="section-head">
+    <h1>Alert history</h1>
+
+    {% if request.user.is_staff %}
+    <a class="btn btn-danger" href="/alerts/clear/?operator={{ operator.id }}">
+      Clear alerts
+    </a>
+    {% endif %}
+  </div>
+
   <div class="list">
     {% for alert in alerts %}
     <article class="list-item">
       <div class="list-row">
         <strong>{{ alert.fleet_code }} • {{ alert.type }}</strong>
+
         <div class="alert-actions">
-          <span class="pill pill-{{ alert.level|lower }}">{{ alert.level }}</span>
+          <span class="pill pill-{{ alert.level|lower }}">
+            {{ alert.level }}
+          </span>
+
           {% if request.user.is_staff %}
           <form method="post" action="/alerts/delete/{{ alert.id }}/">
             {% csrf_token %}
@@ -17,15 +31,18 @@
           {% endif %}
         </div>
       </div>
+
       <div>{{ alert.message }}</div>
-      <small class="muted">{{ alert.operator_name }} • {{ alert.created_at|date:'d/m/Y H:i' }}</small>
-      <a class="btn btn-danger" href="/alerts/clear/?operator={{ operator.id }}">
-      Clear alerts
-      </a>
+
+      <small class="muted">
+        {{ alert.operator_name }} • {{ alert.created_at|date:'d/m/Y H:i' }}
+      </small>
     </article>
+
     {% empty %}
     <p class="muted">No alerts yet.</p>
     {% endfor %}
   </div>
+
 </section>
 {% endblock %}

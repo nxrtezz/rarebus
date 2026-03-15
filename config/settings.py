@@ -7,9 +7,9 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "*").split(",") if h.strip()]
-CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if u.strip()]
+DEBUG = os.getenv("DEBUG", "TRUE").lower() == "true"
+ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ["https://eeveeit.uk"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -54,6 +54,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            "timeout": 30,
+        },
     }
 }
 
@@ -72,5 +75,10 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
 
-GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/yourusername/yourrepo")
-APP_VERSION = "0.4"
+GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/nxrtezz/rarebus")
+NEW_USER_WEBHOOK = os.getenv("NEW_USER_WEBHOOK")
+OPERATOR_REQUEST_WEBHOOK = os.getenv("OPERATOR_REQUEST_WEBHOOK")
+ACCOUNT_APPROVAL_REQUIRED = False
+
+
+APP_VERSION = "0.5.0"

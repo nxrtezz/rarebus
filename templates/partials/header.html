@@ -3,20 +3,29 @@
     <div class="brand">
       <div class="brand-mark"></div>
       <div>
-        <div class="brand-title">Bus Allocations {{ app_version }}</div>
+        <div class="brand-title"><a href="https://eeveeit.uk">RareBus</a></div>
         <div class="brand-subtitle">Multi-operator allocation tracking</div>
+        <div class="brand-subtitle">Version 0.4 - Open Beta!</div>
       </div>
     </div>
     <div class="nav-links">
-      {% if request.user.is_authenticated %}
-      <form action="/logout/" method="post">
-        {% csrf_token %}
-        <button class="btn btn-ghost" type="submit">Log out</button>
-      </form>
-      {% else %}
-      <a class="btn btn-ghost" href="/login/">Log in</a>
-      <a class="btn" href="/register/">Register</a>
-      {% endif %}
+    {% if request.user.is_authenticated %}
+
+    <div class="header-actions">
+
+        {% if request.user.is_superuser %}
+        <a class="btn btn-ghost" href="/admin/">Admin</a>
+        {% endif %}
+
+        <form method="post" action="/logout/" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-ghost" type="submit">Logout</button>
+        </form>
+
+    </div>
+
+    {% endif %}
+
     </div>
   </div>
 </header>
@@ -26,12 +35,12 @@
   <div class="wrap nav-inner">
     <div class="nav-links">
       <a href="/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Dashboard</a>
-      <a href="/operators/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Operators</a>
-      <a href="/rules/types/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Type rules</a>
-      <a href="/alerts/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Alerts</a>
-      <a href="/stats/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Statistics</a>
-      <a href="/fleet/withdrawn/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Withdrawn vehicles</a>
+      <a href="/dashboard/operators/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Operators</a>
+      <a href="/dashboard/rules/types/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Type rules</a>
+      <a href="/dashboard/alerts/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Alerts</a>
+      <a href=" /stats/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Statistics</a>
     </div>
+
     <div class="nav-links">
       {% if operators %}
       <form action="/" method="get" class="inline-form">
@@ -45,14 +54,36 @@
     </div>
   </div>
 </nav>
+<div class="banner">
+  <div class="wrap banner-inner">
+    ⚠ Development build — allocations may be inaccurate. Please report issues in the #web-bugs channel on Discord.
+  </div>
+</div>
+
 {% endif %}
 
 {% if banner %}
 <div class="banner">
   <div class="wrap banner-inner">
+
     <strong>Rare allocation</strong>
-    <span>{{ banner.message }}</span>
-    <small>{{ banner.created_at|date:'d/m/Y H:i' }}</small>
+
+    <span class="banner-message">
+      {{ banner.message }}
+    </span>
+
+    <small>
+      {{ banner.created_at|date:'d/m/Y H:i' }}
+    </small>
+
+    {% if request.user.is_staff %}
+    <form method="post" action="/alerts/clear/" class="banner-close">
+      {% csrf_token %}
+      <input type="hidden" name="operator" value="{{ active_operator_id }}">
+      <button type="submit" aria-label="Dismiss alert">×</button>
+    </form>
+    {% endif %}
+
   </div>
 </div>
 {% endif %}

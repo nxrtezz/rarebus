@@ -10,7 +10,7 @@ class OperatorForm(forms.ModelForm):
         fields = [
             "name", "code", "theme_color", "accent_color", "discord_webhook_url",
             "api_base_url", "vehicles_path", "services_path", "vehicle_journeys_path",
-            "operator_param_name", "training_code", "dead_code"
+            "operator_param_name", "training_code", "dead_code", "rail_replacement_code"
         ]
 
 
@@ -21,11 +21,22 @@ class VehicleOverrideForm(forms.ModelForm):
 
 
 class RegisterForm(UserCreationForm):
-    email = forms.EmailField(required=False)
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=150, required=True)
+    last_name = forms.CharField(max_length=150, required=True)
+    invite_code = forms.CharField(max_length=50, required=False)
 
     class Meta:
         model = User
-        fields = ["username", "email", "password1", "password2"]
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "password1",
+            "password2",
+            "invite_code",
+        ]
 
 
 class VehicleWatchForm(forms.ModelForm):
