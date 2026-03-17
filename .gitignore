@@ -10,3 +10,5 @@ db.sqlite3-wal
 poll.log
 
 *.log
+
+dump_project.py

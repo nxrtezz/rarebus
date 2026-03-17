@@ -104,6 +104,7 @@ def dashboard(request):
     fleet = []
     alerts = []
     if operator:
+        Alert.objects.filter(operator=operator, created_at__date__lt=timezone.now().date()).delete()
         fleet = list(Vehicle.objects.filter(operator=operator, withdrawn=False))
         fleet.sort(key=lambda v: (v.fleet_number if v.fleet_number is not None else 10**12, v.fleet_code or ""))
         alerts = list(Alert.objects.filter(operator=operator).order_by("-created_at")[:20])
@@ -325,9 +326,23 @@ def vehicle_rule_save_view(request):
 def alerts_view(request):
     ctx = base_context(request)
     operator = ctx["active_operator"]
-    alerts = list(Alert.objects.filter(operator=operator).order_by("-created_at")[:200]) if operator else list(Alert.objects.order_by("-created_at")[:200])
-    return render(request, "alerts.html", {**ctx, "title": "Alerts", "operator": operator, "alerts": alerts})
 
+    today = timezone.now().date()
+
+    qs = Alert.objects.all()
+    if operator:
+        qs = qs.filter(operator=operator)
+
+    qs.filter(created_at__date__lt=today).delete()
+
+    alerts = list(qs.order_by("-created_at")[:200])
+
+    return render(request, "alerts.html", {
+        **ctx,
+        "title": "Alerts",
+        "operator": operator,
+        "alerts": alerts
+    })
 
 @staff_member_required
 def delete_alert(request, alert_id):
@@ -341,7 +356,7 @@ def delete_alert(request, alert_id):
         state.latest_banner_created_at = None
         state.latest_banner_operator = None
         state.save()
-    return redirect(f"/dashboard/alerts/?operator={operator_id}")
+    return redirect(f"/alerts/?operator={operator_id}")
 
 @login_required
 def stats_view(request):

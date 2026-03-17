@@ -3,64 +3,71 @@
 {% load static %}
 
 <section class="hero">
-  <div style="text-align: center;">
-    <h1 style="text-align:center;">
+
+  <div class="hero-inner">
+
     {% if operator %}
 
-      <img
-        src="{% static 'logos/'|add:operator.code|add:'.png' %}"
-        style="height:100px;"
-        alt="{{ operator.name }}"
-        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-      >
+      <div class="hero-logo">
+        <img
+          src="{% static 'logos/'|add:operator.code|add:'.png' %}"
+          class="operator-logo"
+          alt="{{ operator.name }}"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"
+        >
+        <span class="operator-name-fallback" style="display:none;">
+          {{ operator.name }}
+        </span>
+      </div>
 
-      <span style="display:none;">{{ operator.name }}</span>
+      <p class="muted">
+        Fleet is sorted by fleet number. Withdrawn vehicles are hidden from all active pages.
+      </p>
+
+      <p class="muted">
+        Public fleet URL:
+        <a href="/fleet/{{ operator.code }}/" target="_blank">
+          /fleet/{{ operator.code }}/
+        </a>
+      </p>
+
+      {% if request.user.is_staff %}
+      <div class="hero-actions">
+
+        <a class="btn"
+           href="/dashboard/sync/?operator={{ operator.id }}">
+          Sync Bustimes
+        </a>
+
+        <form class="hero-form"
+              action="/dashboard/poll/"
+              method="post">
+          {% csrf_token %}
+          <input type="hidden" name="operator_id" value="{{ operator.id }}">
+          <button class="btn btn-secondary" type="submit">
+            Run poll now
+          </button>
+        </form>
+
+        <a class="btn btn-ghost"
+           href="/dashboard/operators/settings/?operator={{ operator.id }}">
+          ⚙ Operator Settings
+        </a>
+
+      </div>
+      {% endif %}
 
     {% else %}
-      No operator selected
-    {% endif %}
-    </h1>
 
-    <p class="muted">
-      Fleet is sorted by fleet number. Withdrawn vehicles are hidden from all active pages.
-    </p>
+      <h1>No operator selected</h1>
 
-    {% if operator %}
-    <p class="muted">
-      Public fleet URL:
-      <a href="/fleet/{{ operator.code }}/" target="_blank" rel="noreferrer">
-        /fleet/{{ operator.code }}/
-      </a>
-    </p>
     {% endif %}
+
   </div>
 
-  {% if operator and request.user.is_staff %}
-  <div class="hero-actions">
-    <a class="btn" href="/dashboard/sync/?operator={{ operator.id }}">Sync Bustimes</a>
-
-    <form action="/dashboard/poll/" method="post">
-      {% csrf_token %}
-      <input type="hidden" name="operator_id" value="{{ operator.id }}">
-      <button class="btn btn-secondary" type="submit">Run poll now</button>
-    </form>
-
-    <a class="btn btn-ghost" href="/dashboard/operators/settings/?operator={{ operator.id }}">
-      ⚙ Operator Settings
-    </a>
-  </div>
-  {% endif %}
 </section>
-
 
 {% if not operator %}
-
-<section class="card">
-  <h2>Add your first operator</h2>
-  <p class="muted">
-    Go to the operators page and add the Bustimes code, theme colour, webhook, training code, and dead code.
-  </p>
-</section>
 
 {% else %}
 

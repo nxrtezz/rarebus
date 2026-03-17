@@ -28,7 +28,18 @@ from discord.ext import commands
 from datetime import timedelta
 from django.utils import timezone
 
-from allocations.models import Alert, Vehicle, Operator, OperatorFollow
+from allocations.models import Alert, Vehicle, Operator, OperatorFollow, PollState
+
+ADMIN_ID = os.getenv("DISCORD_ADMIN_USER_ID")
+
+async def admin_check(interaction):
+    if interaction.user.id != ADMIN_ID:
+        await interaction.response.send_message(
+            "Not authorised.",
+            ephemeral=True
+        )
+        return False
+    return True
 
 # ----------------------------
 # BOT TOKEN
@@ -263,6 +274,143 @@ async def unfollow(interaction: discord.Interaction, operator_code: str):
         f"Stopped alerts for **{operator.name}**."
     )
 
+# ----------------------------
+# /status
+# ----------------------------
+
+@bot.tree.command(name="status", description="RareBus system status")
+async def status(interaction: discord.Interaction):
+
+    if not await admin_check(interaction):
+        return
+
+    poll = await sync_to_async(PollState.get_solo)()
+
+    operators = await sync_to_async(lambda: Operator.objects.count())()
+
+    tracked = await sync_to_async(
+        lambda: Vehicle.objects.filter(last_seen_journey_at__isnull=False).count()
+    )()
+
+    if poll.last_poll_at:
+
+        delta = timezone.now() - poll.last_poll_at
+        minutes = int(delta.total_seconds() / 60)
+
+        if minutes < 10:
+            health = "🟢 Healthy"
+            colour = 0x2ECC71
+        elif minutes < 20:
+            health = "🟡 Delayed"
+            colour = 0xF1C40F
+        else:
+            health = "🔴 Poll stalled"
+            colour = 0xE74C3C
+
+        last_poll = poll.last_poll_at.strftime("%d %b %Y %H:%M")
+
+    else:
+        health = "🔴 No poll recorded"
+        last_poll = "Never"
+        colour = 0xE74C3C
+
+    embed = discord.Embed(
+        title="RareBus System Status",
+        colour=colour
+    )
+
+    embed.add_field(name="System Health", value=health)
+    embed.add_field(name="Last Poll", value=last_poll)
+    embed.add_field(name="Operators", value=str(operators))
+    embed.add_field(name="Vehicles Tracking", value=str(tracked))
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# ----------------------------
+# /pollhealth
+# ----------------------------
+
+@bot.tree.command(name="pollhealth", description="Operator polling health")
+async def pollhealth(interaction: discord.Interaction):
+
+    if not await admin_check(interaction):
+        return
+
+    operators = await sync_to_async(
+        lambda: list(Operator.objects.all().order_by("name"))
+    )()
+
+    cutoff = timezone.now() - timedelta(minutes=20)
+
+    lines = []
+
+    for op in operators:
+
+        count = await sync_to_async(
+            lambda: Vehicle.objects.filter(
+                operator=op,
+                last_seen_journey_at__gte=cutoff
+            ).count()
+        )()
+
+        if count > 0:
+            status = "🟢 OK"
+        else:
+            status = "🔴 No vehicles"
+
+        lines.append(f"{op.code} | {status}")
+
+    embed = discord.Embed(
+        title="Operator Poll Health",
+        colour=0x3498DB
+    )
+
+    embed.description = "\n".join(lines)
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# ----------------------------
+# /lastpoll
+# ----------------------------
+
+@bot.tree.command(name="lastpoll", description="Show last poll time")
+async def lastpoll(interaction: discord.Interaction):
+
+    if not await admin_check(interaction):
+        return
+
+    poll = await sync_to_async(PollState.get_solo)()
+
+    if poll.last_poll_at:
+        value = poll.last_poll_at.strftime("%d %b %Y %H:%M")
+    else:
+        value = "Never"
+
+    await interaction.response.send_message(
+        f"Last poll ran at: **{value}**",
+        ephemeral=True
+    )
+
+# ----------------------------
+# /vehiclecount
+# ----------------------------
+
+@bot.tree.command(name="vehiclecount", description="Show tracked vehicle count")
+async def vehiclecount(interaction: discord.Interaction):
+
+    if not await admin_check(interaction):
+        return
+
+    total = await sync_to_async(lambda: Vehicle.objects.count())()
+
+    tracking = await sync_to_async(
+        lambda: Vehicle.objects.filter(last_seen_journey_at__isnull=False).count()
+    )()
+
+    await interaction.response.send_message(
+        f"Vehicles in DB: **{total}**\nCurrently tracking: **{tracking}**",
+        ephemeral=True
+    )
 
 # ----------------------------
 # START BOT

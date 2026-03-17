@@ -33,7 +33,7 @@ urlpatterns = [
     path("dashboard/rules/types/save/", views.type_rules_save_view, name="type-rules-save"),
     path("dashboard/rules/vehicle/save/", views.vehicle_rule_save_view, name="vehicle-rule-save"),
 
-    path("dashboard/alerts/", views.alerts_view, name="alerts"),
+    path("alerts/", views.alerts_view, name="alerts"),
     path("alerts/delete/<int:alert_id>/", views.delete_alert, name="delete-alert"),
 
     path("stats/", views.stats_view, name="stats"),

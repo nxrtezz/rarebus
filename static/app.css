@@ -225,3 +225,106 @@ code { background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px 6px; 
 .banner-close button:hover {
   opacity: 1;
 }
+
+.hero-actions{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  margin-top:18px;
+}
+
+/* Make the form behave like a button container */
+.hero-form{
+  margin:0;
+  display:flex;
+}
+
+/* Force identical button sizing */
+.hero-actions .btn{
+  min-width:190px;
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.hero{
+  margin-bottom:30px;
+}
+
+.hero-center{
+  text-align:center;
+  max-width:700px;
+  margin:0 auto;
+}
+
+.hero-logo{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.operator-logo{
+  height:110px;
+}
+
+.operator-name-fallback{
+  font-size:40px;
+  font-weight:700;
+}
+
+.hero-subtitle{
+  margin-top:10px;
+}
+
+.hero-fleet-url{
+  margin-top:8px;
+}
+
+.hero-actions{
+  margin-top:20px;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.hero-actions .btn{
+  min-width:190px;
+  height:44px;
+}
+
+.hero-form{
+  margin:0;
+}
+.hero-inner{
+  text-align:center;
+  max-width:720px;
+  margin:0 auto;
+}
+
+.hero-logo{
+  margin-bottom:12px;
+}
+
+.operator-logo{
+  height:100px;
+}
+
+.hero-actions{
+  margin-top:16px;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+
+.hero-actions .btn{
+  width:180px;
+}
+
+.hero-form{
+  margin:0;
+  display:flex;
+}

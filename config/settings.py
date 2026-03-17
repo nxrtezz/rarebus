@@ -43,6 +43,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "allocations.context_processors.app_version",
             ],
         },
     },
@@ -81,4 +82,4 @@ OPERATOR_REQUEST_WEBHOOK = os.getenv("OPERATOR_REQUEST_WEBHOOK")
 ACCOUNT_APPROVAL_REQUIRED = False
 
 
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.5.1"
