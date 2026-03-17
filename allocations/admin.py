@@ -33,3 +33,13 @@ class InviteCodeAdmin(admin.ModelAdmin):
 from .models import OperatorCustomCode
 
 admin.site.register(OperatorCustomCode)
+
+from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+admin.site.unregister(User)
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    list_display = ("username", "email", "last_login", "is_staff")

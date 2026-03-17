@@ -328,3 +328,9 @@ code { background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px 6px; 
   margin:0;
   display:flex;
 }
+
+.table td:nth-child(7),
+.table th:nth-child(7) {
+  white-space: nowrap;
+  width: 1%;
+}

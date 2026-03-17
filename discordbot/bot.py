@@ -30,7 +30,7 @@ from django.utils import timezone
 
 from allocations.models import Alert, Vehicle, Operator, OperatorFollow, PollState
 
-ADMIN_ID = os.getenv("DISCORD_ADMIN_USER_ID")
+ADMIN_ID = int(os.getenv("DISCORD_ADMIN_USER_ID"))
 
 async def admin_check(interaction):
     if interaction.user.id != ADMIN_ID:

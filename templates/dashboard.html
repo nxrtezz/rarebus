@@ -196,9 +196,21 @@
               {% endif %}
             </td>
 
-            <td>
+            <td style="white-space: nowrap;">
               {% if vehicle.last_seen_journey_at %}
-                {{ vehicle.last_seen_journey_at|date:'H:i' }}
+
+                {% now "Y-m-d" as today %}
+
+                {% if vehicle.last_seen_journey_at|date:"Y-m-d" == today %}
+                  {{ vehicle.last_seen_journey_at|date:"H:i" }}
+
+                {% elif vehicle.last_seen_journey_at|date:"Y" == today|slice:":4" %}
+                  {{ vehicle.last_seen_journey_at|date:"j M" }}
+
+                {% else %}
+                  {{ vehicle.last_seen_journey_at|date:"j M Y" }}
+                {% endif %}
+
               {% else %}
                 -
               {% endif %}

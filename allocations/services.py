@@ -379,7 +379,13 @@ def poll_operator(operator):
 
         alert_key = f"{vehicle.fleet_code}|{route_name}|{level}"
 
+        is_today = (
+            dt is not None and
+            timezone.localtime(dt).date() == timezone.localtime().date()
+        )
+
         should_alert = (
+            is_today and
             level in ("RARE", "UNCOMMON", "RAIL REPLACEMENT")
             and vehicle.last_alert_key != alert_key
         )
