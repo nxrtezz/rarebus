@@ -96,20 +96,58 @@ def home(request):
     )
 
 
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+
 @login_required
 def dashboard(request):
     ctx = base_context(request)
     operator = ctx["active_operator"]
+
     supervisors = []
     fleet = []
     alerts = []
+    can_edit = False  # 👈 NEW
+
     if operator:
-        Alert.objects.filter(operator=operator, created_at__date__lt=timezone.now().date()).delete()
+        Alert.objects.filter(
+            operator=operator,
+            created_at__date__lt=timezone.now().date()
+        ).delete()
+
         fleet = list(Vehicle.objects.filter(operator=operator, withdrawn=False))
-        fleet.sort(key=lambda v: (v.fleet_number if v.fleet_number is not None else 10**12, v.fleet_code or ""))
-        alerts = list(Alert.objects.filter(operator=operator).order_by("-created_at")[:20])
+        fleet.sort(key=lambda v: (
+            v.fleet_number if v.fleet_number is not None else 10**12,
+            v.fleet_code or ""
+        ))
+
+        alerts = list(
+            Alert.objects.filter(operator=operator)
+            .order_by("-created_at")[:20]
+        )
+
         supervisors = Supervisor.objects.filter(operator=operator)
-    return render(request, "dashboard.html", {**ctx, "title": "Dashboard", "operator": operator, "fleet": fleet, "alerts": alerts, "supervisors": supervisors,})
+
+        # 🔥 NEW: permission logic
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                can_edit = True
+            else:
+                can_edit = supervisors.filter(user=request.user).exists()
+
+    return render(
+        request,
+        "dashboard.html",
+        {
+            **ctx,
+            "title": "Dashboard",
+            "operator": operator,
+            "fleet": fleet,
+            "alerts": alerts,
+            "supervisors": supervisors,
+            "can_edit": can_edit,  # 👈 ADD THIS
+        },
+    )
 
 
 def public_fleet_view(request, code):
@@ -668,3 +706,92 @@ def operator_settings_view(request):
             "custom_codes": custom_codes
         }
     )
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import SupervisorRequestForm
+
+@login_required
+def request_supervisor(request):
+    if request.method == "POST":
+        form = SupervisorRequestForm(request.POST)
+        if form.is_valid():
+            req = form.save(commit=False)
+            req.user = request.user
+            req.save()
+
+            from allocations.services import send_discord_dm  # adjust import if needed
+
+            send_discord_dm(
+                f"🛠️ **New Supervisor Request**\n"
+                f"User: {request.user.username}\n"
+                f"Operator: {req.operator.name} ({req.operator.code})\n"
+                f"Discord: {req.discord_username}\n"
+                f"Reason: {req.reason or 'None'}\n\n"
+                f"Admin: https://eeveeit.uk/admin/allocations/supervisorrequest/{req.id}/change/"
+            )
+
+            return redirect("dashboard")
+    else:
+        form = SupervisorRequestForm()
+
+    return render(request, "request_supervisor.html", {"form": form})
+
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Operator, DiscordSubscription
+
+
+@csrf_exempt
+def discord_follow(request):
+    data = json.loads(request.body)
+
+    operator_code = data.get("operator")
+    user_id = data.get("user_id")
+    channel_id = data.get("channel_id")
+    guild_id = data.get("guild_id")
+
+    operator = Operator.objects.get(code=operator_code)
+
+    if channel_id:
+        DiscordSubscription.objects.update_or_create(
+            operator=operator,
+            channel_id=channel_id,
+            defaults={"guild_id": guild_id, "user_id": None},
+        )
+        return JsonResponse({"status": "channel follow added"})
+
+    if user_id:
+        DiscordSubscription.objects.update_or_create(
+            operator=operator,
+            user_id=user_id,
+            defaults={"channel_id": None, "guild_id": None},
+        )
+        return JsonResponse({"status": "dm follow added"})
+
+    return JsonResponse({"error": "invalid"}, status=400)
+
+@csrf_exempt
+def discord_unfollow(request):
+    data = json.loads(request.body)
+
+    operator_code = data.get("operator")
+    user_id = data.get("user_id")
+    channel_id = data.get("channel_id")
+
+    operator = Operator.objects.get(code=operator_code)
+
+    if channel_id:
+        DiscordSubscription.objects.filter(
+            operator=operator,
+            channel_id=channel_id
+        ).delete()
+
+    if user_id:
+        DiscordSubscription.objects.filter(
+            operator=operator,
+            user_id=user_id
+        ).delete()
+
+    return JsonResponse({"status": "removed"})

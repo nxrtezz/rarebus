@@ -43,3 +43,11 @@ class VehicleWatchForm(forms.ModelForm):
     class Meta:
         model = VehicleWatch
         fields = ["route_name"]
+
+from django import forms
+from .models import SupervisorRequest
+
+class SupervisorRequestForm(forms.ModelForm):
+    class Meta:
+        model = SupervisorRequest
+        fields = ["operator", "discord_username", "reason"]

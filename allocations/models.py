@@ -168,15 +168,21 @@ class VehicleWatch(models.Model):
     def __str__(self):
         return f"{self.created_by.username}: {self.vehicle.fleet_code} {self.route_name or 'ANY'}"
 
+from django.contrib.auth.models import User
+
 class Supervisor(models.Model):
     operator = models.ForeignKey(Operator, on_delete=models.CASCADE)
     discord_username = models.CharField(max_length=100)
 
-    class Meta:
-        ordering = ["discord_username"]
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
 
     def __str__(self):
-        return f"{self.discord_username} ({self.operator.name})"
+        return f"{self.discord_username} ({self.operator.code})"
 
 import random
 import string
@@ -240,3 +246,44 @@ class OperatorFollow(models.Model):
             "guild_id",
             "operator"
         )
+
+
+from django.contrib.auth.models import User
+
+class SupervisorRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    operator = models.ForeignKey("Operator", on_delete=models.CASCADE)
+    discord_username = models.CharField(max_length=100)
+    reason = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user} → {self.operator.code}"
+    
+
+from django.contrib.auth.models import User
+from django.db import models
+
+
+class ChangeLog(models.Model):
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    operator = models.ForeignKey("Operator", on_delete=models.CASCADE)
+
+    action = models.CharField(max_length=100)
+    details = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.action} by {self.user}"
+
+class DiscordSubscription(models.Model):
+    operator = models.ForeignKey(Operator, on_delete=models.CASCADE)
+
+    channel_id = models.CharField(max_length=50, null=True, blank=True)
+    user_id = models.CharField(max_length=50, null=True, blank=True)
+    guild_id = models.CharField(max_length=50, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)

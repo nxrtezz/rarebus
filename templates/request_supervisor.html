@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-inner">
+
+    <h1>Request Supervisor Access</h1>
+
+    <p class="muted">
+      Request access to manage allocations, rarity rules and fleet data for an operator.
+      You’ll need to be active and trusted within the community.
+    </p>
+
+  </div>
+</section>
+
+<section class="card" style="max-width: 600px; margin: 0 auto;">
+
+    <form method="post" class="form">
+    {% csrf_token %}
+
+    <div class="form-grid">
+
+        <div class="form-group">
+        <label for="id_operator">Operator</label>
+        {{ form.operator }}
+        </div>
+
+        <div class="form-group">
+        <label for="id_discord_username">Discord username</label>
+        {{ form.discord_username }}
+        </div>
+
+        <div class="form-group full">
+        <label for="id_reason">Why should you be a supervisor?</label><br>  
+        {{ form.reason }}
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+        <button class="btn" type="submit">
+        Submit request
+        </button>
+    </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

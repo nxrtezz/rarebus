@@ -43,4 +43,9 @@ urlpatterns = [
     path("admin/reject-user/<int:user_id>/", views.reject_user),
 
     path("dashboard/operators/settings/", views.operator_settings_view, name="operator-settings"),
+
+    path("dashboard/request-supervisor/", views.request_supervisor, name="request_supervisor"), 
+
+    path("discord/follow/", views.discord_follow),
+    path("discord/unfollow/", views.discord_unfollow),
 ]

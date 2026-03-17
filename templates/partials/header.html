@@ -37,8 +37,8 @@
       <a href="/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Dashboard</a>
       <a href="/dashboard/operators/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Operators</a>
       <a href="/dashboard/rules/types/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Type rules</a>
-      <a href="/dashboard/alerts/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Alerts</a>
-      <a href=" /stats/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Statistics</a>
+      <a href="/alerts/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Alerts</a>
+      <a href="/stats/{% if active_operator_id %}?operator={{ active_operator_id }}{% endif %}">Statistics</a>
     </div>
 
     <div class="nav-links">
@@ -57,6 +57,13 @@
 <div class="banner">
   <div class="wrap banner-inner">
     ⚠ Development build — allocations may be inaccurate. Please report issues in the #web-bugs channel on Discord.
+  </div>
+</div>
+<div class="banner">
+  <div class="wrap banner-inner">
+    <a href="https://eeveeit.uk/dashboard/request-supervisor/" style="color: inherit; text-decoration: underline;">
+      New feature: You can now request supervisor access to manage allocations, rarity rules and fleet data for an operator.
+    </a>
   </div>
 </div>
 

@@ -5,7 +5,6 @@ import os
 from django.utils import timezone
 
 from .models import Route, Vehicle, TypeRule, VehicleRule, Alert, PollState, VehicleWatch
-from .models import OperatorFollow
 from asgiref.sync import sync_to_async
 
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -70,7 +69,7 @@ def fetch_operator_fleet(operator):
 
     endpoint = f"{operator.api_base_url.rstrip('/')}{operator.vehicles_path}"
 
-    url = with_params(endpoint, {operator.operator_param_name: operator.code, "limit": 200})
+    url = with_params(endpoint, {operator.operator_param_name: operator.code, "limit": 500})
     payload = fetch_json(url)
 
     results = payload.get("results", [])
@@ -227,72 +226,64 @@ def emit_alert(operator, vehicle, level, type_name, message, route_name=None, de
 
         poll_state.save()
 
+    from allocations.models import DiscordSubscription
+
+    embed = {
+        "title": "Vehicle returned to service" if type_name == "VOR_RETURN" else "Allocation alert",
+        "description": message,
+        "color": level_color(level),
+        "fields": [
+            {"name": "Operator", "value": operator.name, "inline": True},
+            {"name": "Fleet", "value": vehicle.fleet_code if vehicle else "N/A", "inline": True},
+            {"name": "Type", "value": vehicle.vehicle_type if vehicle else "N/A", "inline": True},
+            {"name": "Level", "value": level, "inline": True},
+            {"name": "Route", "value": route_name or "Unknown", "inline": True},
+            {"name": "Destination", "value": destination or "Unknown", "inline": True},
+        ],
+        "timestamp": created_at.isoformat(),
+    }
+
+    # ✅ 1. OLD SYSTEM (keep this)
     if operator.discord_webhook_url:
-
-        embed = {
-            "title": "Vehicle returned to service" if type_name == "VOR_RETURN" else "Allocation alert",
-            "description": message,
-            "color": level_color(level),
-            "fields": [
-                {"name": "Operator", "value": operator.name, "inline": True},
-                {"name": "Fleet", "value": vehicle.fleet_code if vehicle else "N/A", "inline": True},
-                {"name": "Type", "value": vehicle.vehicle_type if vehicle else "N/A", "inline": True},
-                {"name": "Level", "value": level, "inline": True},
-                {"name": "Route", "value": route_name or "Unknown", "inline": True},
-                {"name": "Destination", "value": destination or "Unknown", "inline": True},
-            ],
-            "timestamp": created_at.isoformat(),
-        }
-
         try:
             post_discord_webhook(operator.discord_webhook_url, embed)
         except Exception:
             pass
 
-    if vehicle:
-        send_discord_follow_alerts(operator, vehicle, level, message, route_name, destination)
+
+    # ✅ 2. NEW SYSTEM
+    subs = DiscordSubscription.objects.filter(operator=operator)
+
+    for sub in subs:
+
+        # 📢 Channel (BOT SEND)
+        if sub.channel_id:
+            try:
+                requests.post(
+                    f"https://discord.com/api/channels/{sub.channel_id}/messages",
+                    headers={
+                        "Authorization": f"Bot {DISCORD_TOKEN}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "embeds": [embed]
+                    },
+                    timeout=10,
+                )
+            except Exception:
+                pass
+
+        # 💬 DM
+        elif sub.user_id:
+            try:
+                send_discord_dm_to_user(
+                    sub.user_id,
+                    embed
+                )
+            except Exception:
+                pass
 
     return alert
-
-
-def send_discord_follow_alerts(operator, vehicle, level, message, route_name, destination):
-
-    if not DISCORD_TOKEN:
-        return
-
-    follows = OperatorFollow.objects.filter(
-        operator=operator,
-        channel_id__isnull=False
-    )
-
-    headers = {
-        "Authorization": f"Bot {DISCORD_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    for follow in follows:
-
-        url = f"https://discord.com/api/channels/{follow.channel_id}/messages"
-
-        payload = {
-            "embeds": [{
-                "title": "RareBus Alert",
-                "description": message,
-                "color": level_color(level),
-                "fields": [
-                    {"name": "Fleet", "value": vehicle.fleet_code},
-                    {"name": "Operator", "value": operator.name},
-                    {"name": "Route", "value": route_name or "Unknown"},
-                    {"name": "Destination", "value": destination or "Unknown"},
-                    {"name": "Level", "value": level}
-                ]
-            }]
-        }
-
-        try:
-            requests.post(url, json=payload, headers=headers, timeout=10)
-        except Exception:
-            pass
 
 def fetch_recent_journeys(operator):
 
@@ -387,7 +378,10 @@ def poll_operator(operator):
         should_alert = (
             is_today and
             level in ("RARE", "UNCOMMON", "RAIL REPLACEMENT")
-            and vehicle.last_alert_key != alert_key
+            and (
+                vehicle.last_alert_key != alert_key
+                or vehicle.last_alert_date != today
+            )
         )
 
         if should_alert:
@@ -417,7 +411,8 @@ def poll_operator(operator):
             "current_destination",
             "current_allocation_level",
             "last_journey_id",
-            "last_alert_key"
+            "last_alert_key",
+            "last_alert_date",
         ])
 
     poll_state = PollState.get_solo()
@@ -624,3 +619,41 @@ def send_test_webhook(operator):
         route_name="TEST",
         destination="Webhook",
     )
+
+def send_discord_dm_to_user(user_id, embed):
+    if not DISCORD_TOKEN:
+        return
+
+    try:
+        r = requests.post(
+            "https://discord.com/api/users/@me/channels",
+            headers={
+                "Authorization": f"Bot {DISCORD_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={"recipient_id": user_id},
+            timeout=10,
+        )
+
+        channel_id = r.json()["id"]
+
+        requests.post(
+            f"https://discord.com/api/channels/{channel_id}/messages",
+            headers={
+                "Authorization": f"Bot {DISCORD_TOKEN}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "embeds": [embed]
+            },
+            timeout=10,
+            )
+
+    except Exception as e:
+        print("DM failed:", e)
+
+def send_webhook(webhook_url, payload):
+    try:
+        requests.post(webhook_url, json=payload, timeout=10)
+    except Exception as e:
+        print("Webhook failed:", e)

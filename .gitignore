@@ -12,3 +12,4 @@ poll.log
 *.log
 
 dump_project.py
+project_dump.txt

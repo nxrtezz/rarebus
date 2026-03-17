@@ -334,3 +334,44 @@ code { background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px 6px; 
   white-space: nowrap;
   width: 1%;
 }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: #9aa4b2;
+}
+
+.form input,
+.form select,
+.form textarea {
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #2a3441;
+  background: #0f1720;
+  color: #e6edf3;
+  font-size: 0.95rem;
+}
+
+.form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+}

@@ -31,7 +31,7 @@
         </a>
       </p>
 
-      {% if request.user.is_staff %}
+      {% if can_edit %}
       <div class="hero-actions">
 
         <a class="btn"
@@ -106,7 +106,7 @@
     </div>
 
     <div class="supervisor-add">
-      <a href="https://discord.gg/NFZ5a6dbea" target="_blank">
+      <a href="/dashboard/request-supervisor/" target="_blank">
         + Become a supervisor
       </a>
     </div>

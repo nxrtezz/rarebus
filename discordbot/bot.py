@@ -28,7 +28,7 @@ from discord.ext import commands
 from datetime import timedelta
 from django.utils import timezone
 
-from allocations.models import Alert, Vehicle, Operator, OperatorFollow, PollState
+from allocations.models import Alert, Vehicle, Operator, DiscordSubscription, PollState
 
 ADMIN_ID = int(os.getenv("DISCORD_ADMIN_USER_ID"))
 
@@ -237,20 +237,49 @@ async def follow(interaction: discord.Interaction, operator_code: str):
         await interaction.response.send_message("Operator not found.")
         return
 
-    await sync_to_async(OperatorFollow.objects.update_or_create)(
-        guild_id=interaction.guild_id,
-        operator=operator,
-        defaults={"channel_id": interaction.channel_id}
-    )
+    if interaction.guild_id:
+        # permission check
+        if interaction.guild_id:
+            # server owner bypass
+            if interaction.user.id == interaction.guild.owner_id:
+                pass
 
-    await interaction.response.send_message(
-        f"Now sending **{operator.name}** alerts to this channel."
-    )
+            else:
+                perms = interaction.channel.permissions_for(interaction.user)
 
+                if not (perms.manage_channels or perms.administrator):
+                    await interaction.response.send_message(
+                        "You need **Manage Channels** permission to use this in a server.",
+                        ephemeral=True
+                    )
+                    return
 
-# ----------------------------
-# /unfollow
-# ----------------------------
+        await sync_to_async(DiscordSubscription.objects.update_or_create)(
+            operator=operator,
+            channel_id=str(interaction.channel_id),
+            defaults={
+                "guild_id": str(interaction.guild_id),
+                "user_id": None,
+            }
+        )
+
+        await interaction.response.send_message(
+            f"Now sending **{operator.name}** alerts to this channel."
+        )
+
+    else:
+        await sync_to_async(DiscordSubscription.objects.update_or_create)(
+            operator=operator,
+            user_id=str(interaction.user.id),
+            defaults={
+                "channel_id": None,
+                "guild_id": None,
+            }
+        )
+
+        await interaction.response.send_message(
+            f"Now sending **{operator.name}** alerts to your DMs."
+        )
 
 @bot.tree.command(name="unfollow", description="Stop alerts for an operator")
 async def unfollow(interaction: discord.Interaction, operator_code: str):
@@ -263,16 +292,47 @@ async def unfollow(interaction: discord.Interaction, operator_code: str):
         await interaction.response.send_message("Operator not found.")
         return
 
-    await sync_to_async(
-        OperatorFollow.objects.filter(
-            guild_id=interaction.guild_id,
-            operator=operator
-        ).delete
-    )()
+    if interaction.guild_id:
 
-    await interaction.response.send_message(
-        f"Stopped alerts for **{operator.name}**."
-    )
+        # server owner bypass
+        if interaction.user.id == interaction.guild.owner_id:
+            pass
+
+        else:
+            perms = interaction.channel.permissions_for(interaction.user)
+
+            if not (perms.manage_channels or perms.administrator):
+                await interaction.response.send_message(
+                    "You need **Manage Channels** permission to use this in a server.",
+                    ephemeral=True
+                )
+                return
+
+    # 🏠 Server channel
+    if interaction.guild_id:
+        await sync_to_async(
+            DiscordSubscription.objects.filter(
+                operator=operator,
+                channel_id=str(interaction.channel_id)
+            ).delete
+        )()
+
+        await interaction.response.send_message(
+            f"Stopped alerts for **{operator.name}** in this channel."
+        )
+
+    # 💬 DM
+    else:
+        await sync_to_async(
+            DiscordSubscription.objects.filter(
+                operator=operator,
+                user_id=str(interaction.user.id)
+            ).delete
+        )()
+
+        await interaction.response.send_message(
+            f"Stopped alerts for **{operator.name}** in your DMs."
+        )
 
 # ----------------------------
 # /status
